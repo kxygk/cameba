@@ -95,7 +95,7 @@
 (defn get-current-line
   "Get the currently selected line"
   [state]
-  (let [mixer-info (get-current-mixer state)
+  (let [mixer-info (get-current-mixer-info state)
         line-name (:current-line state)
         line-info (some #(if (= (:name %) line-name) %) (:target-lines-info mixer-info))]
     (.getLine (get-mixer (:mixer-info mixer-info)) (:line-info line-info))))
@@ -103,7 +103,7 @@
 (defn get-current-line-info
   "Get the currently selected line"
   [state]
-  (let [mixer-info (get-current-mixer state)
+  (let [mixer-info (get-current-mixer-info state)
         line-name (:current-line state)
         line-info (some #(if (= (:name %) line-name) %) (:target-lines-info mixer-info))]
     (:line-info line-info)))
