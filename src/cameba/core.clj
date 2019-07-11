@@ -326,14 +326,13 @@
                              ;;  :byte-buffer byte-buffer
                              ;;  :num-samples num-samples}]}}})
 
-(defn render-please
-  ""
-  []
-  (fx/mount-renderer
-   *state
-   (fx/create-renderer
-    :middleware (fx/wrap-map-desc assoc :fx/type root)
-    :opts {:fx.opt/map-event-handler event-handler})))
 
 
-;(render-please)
+(def renderer
+  (fx/create-renderer
+   :middleware (fx/wrap-map-desc assoc :fx/type root)
+   :opts {:fx.opt/map-event-handler event-handler}))
+
+(fx/mount-renderer
+ *state
+ renderer)
