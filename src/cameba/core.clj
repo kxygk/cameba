@@ -153,59 +153,58 @@
 ;  (swap! *state reset-channels))
 
 
-(defn get-current-line
-  "Get the currently selected line object"
-  [{:keys [mixers
-           current-mixer
-           current-line] :as state}]
-  (get-in state [:mixers
-                 current-mixer
-                 :lines
-                 current-line
-                 :line]))
+;; (defn get-current-line
+;;   "Get the currently selected line object"
+;;   [{:keys [mixers
+;;            current-mixer
+;;            current-line]}]
+;;   (get-in state [:mixers
+;;                  current-mixer
+;;                  :lines
+;;                  current-line
+;;                  :line]))
 
-(defn get-current-format
-  ""
-  [{:keys [current-channels
-           current-bit-size
-           current-endianness
-           current-sample-rate
-           num-samples]
-    :as state}]
-  (audio/pcm-format current-channels
-                    current-bit-size
-                    (not current-endianness)
-                    current-sample-rate))
+;; (defn get-current-format
+;;   ""
+;;   [{:keys [current-channels
+;;            current-bit-size
+;;            current-endianness
+;;            current-sample-rate
+;;            num-samples]}]
+;;   (audio/pcm-format current-channels
+;;                     current-bit-size
+;;                     (not current-endianness)
+;;                     current-sample-rate))
 
 
-(defn close-line
-  "Closes the current line"
-  [state]
-  (audio/close-line (get-current-line state)))
+;; (defn close-line
+;;   "Closes the current line"
+;;   [state]
+;;   (audio/close-line (get-current-line state)))
 
-(defn open-line
-  "Opens the currently selected line with the current format
-  And allocates a buffer for the result"
-  [{:keys [current-channels
-           current-bit-size
-           current-endianness
-           current-sample-rate
-           num-samples] :as state}]
-  (let [current-format (audio/pcm-format current-channels
-                                         current-bit-size
-                                         (not current-endianness)
-                                         current-sample-rate)
-        endianness  (if (not current-endianness)
-                      java.nio.ByteOrder/BIG_ENDIAN
-                      java.nio.ByteOrder/LITTLE_ENDIAN)]
-    (println "state says endianness is: " current-endianness ". So setting line to:" endianness)
-    (audio/open-line (get-current-line state)
-                     current-format)
-    (swap! *state
-           assoc
-           :byte-buffer
-           (.order (java.nio.ByteBuffer/allocate (audio/calculate-buffer-size current-format num-samples))
-                   endianness))))
+;; (defn open-line
+;;   "Opens the currently selected line with the current format
+;;   And allocates a buffer for the result"
+;;   [{:keys [current-channels
+;;            current-bit-size
+;;            current-endianness
+;;            current-sample-rate
+;;            num-samples]}]
+;;   (let [current-format (audio/pcm-format current-channels
+;;                                          current-bit-size
+;;                                          (not current-endianness)
+;;                                          current-sample-rate)
+;;         endianness  (if (not current-endianness)
+;;                       java.nio.ByteOrder/BIG_ENDIAN
+;;                       java.nio.ByteOrder/LITTLE_ENDIAN)]
+;;     (println "state says endianness is: " current-endianness ". So setting line to:" endianness)
+;;     (audio/open-line (get-current-line state)
+;;                      current-format)
+;;     (swap! *state
+;;            assoc
+;;            :byte-buffer
+;;            (.order (java.nio.ByteBuffer/allocate (audio/calculate-buffer-size current-format num-samples))
+;;                    endianness))))
 
 
 (defn line-selection
@@ -262,32 +261,32 @@
                                                      current-bit-size
                                                      current-endianness])))}]})
 
-(defmethod event-handler ::read-into-buffer
-  [event]
-  (swap! *state assoc :current-mixer (:fx/event event)))
+;; (defmethod event-handler ::read-into-buffer
+;;   [event]
+;;   (swap! *state assoc :current-mixer (:fx/event event)))
 
 
-(defn plot-buffer
-  ""
-  [^java.nio.ByteBuffer
-   buffer
-   num-samples]
-  (if (not (nil? buffer))
-    (cameba.plot/plot-points (mapv #(vector %1 %2) (range) (audio/print-buffer buffer (* 2 num-samples)))
-                             num-samples
-                             (- (apply max (audio/print-buffer buffer num-samples)) (apply min (audio/print-buffer buffer num-samples))))))
+;; (defn plot-buffer
+;;   ""
+;;   [^java.nio.ByteBuffer
+;;    buffer
+;;    num-samples]
+;;   (if (not (nil? buffer))
+;;     (cameba.plot/plot-points (mapv #(vector %1 %2) (range) (audio/print-buffer buffer (* 2 num-samples)))
+;;                              num-samples
+;;                              (- (apply max (audio/print-buffer buffer num-samples)) (apply min (audio/print-buffer buffer num-samples))))))
 
 
-(defn chart-view
-  "Our plot"
-  [{:keys [byte-buffer num-samples]}]
-  (if (not (nil? byte-buffer))
-    {:fx/type fx/ext-instance-factory
-     :byte-buffer byte-buffer
-     :num-samples num-samples
-     :create #(plot-buffer byte-buffer num-samples)}
-    {:fx/type :label
-     :text "none"}))
+;; (defn chart-view
+;;   "Our plot"
+;;   [{:keys [byte-buffer num-samples]}]
+;;   (if (not (nil? byte-buffer))
+;;     {:fx/type fx/ext-instance-factory
+;;      :byte-buffer byte-buffer
+;;      :num-samples num-samples
+;;      :create #(plot-buffer byte-buffer num-samples)}
+;;     {:fx/type :label
+;;      :text "none"}))
 
 
 
