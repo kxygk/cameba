@@ -9,65 +9,80 @@
   [state]
   (assoc state
          :current-sample-rate
-         (first (keys (get-in state [:mixers
-                                     (:current-mixer state)
-                                     :lines
-                                     (:current-line state)
-                                     :formats
-                                     (:current-channels state)
-                                     (:current-bit-size state)
-                                     (:current-endianness state)])))))
+         (first (keys (get-in
+                       state
+                       [:mixers
+                        (:current-mixer state)
+                        :lines
+                        (:current-line state)
+                        :formats
+                        (:current-channels state)
+                        (:current-bit-size state)
+                        (:current-endianness state)])))))
 
 
 (defn- reset-endianness
   ""
   [state]
-  (reset-sample-rate (assoc state
-                            :current-endianness
-                            (first (keys (get-in state [:mixers
-                                                        (:current-mixer state)
-                                                        :lines
-                                                        (:current-line state)
-                                                        :formats
-                                                        (:current-channels state)
-                                                        (:current-bit-size state)]))))))
+  (reset-sample-rate (assoc
+                      state
+                      :current-endianness
+                      (first (keys (get-in
+                                    state
+                                    [:mixers
+                                     (:current-mixer state)
+                                     :lines
+                                     (:current-line state)
+                                     :formats
+                                     (:current-channels state)
+                                     (:current-bit-size state)]))))))
 
 (defn- reset-bit-size
   ""
   [state]
-  (reset-endianness (assoc state
-                           :current-bit-size
-                           (first (keys (get-in state [:mixers
-                                                       (:current-mixer state)
-                                                       :lines
-                                                       (:current-line state)
-                                                       :formats
-                                                       (:current-channels state)]))))))
+  (reset-endianness (assoc
+                     state
+                     :current-bit-size
+                     (first (keys (get-in
+                                   state
+                                   [:mixers
+                                    (:current-mixer state)
+                                    :lines
+                                    (:current-line state)
+                                    :formats
+                                    (:current-channels state)]))))))
 
 (defn- reset-channels
   ""
   [state]
-  (reset-bit-size (assoc state
-                         :current-channels
-                         (first (keys (get-in state [:mixers
-                                                     (:current-mixer state)
-                                                     :lines
-                                                     (:current-line state)
-                                                     :formats]))))))
+  (reset-bit-size (assoc
+                   state
+                   :current-channels
+                   (first (keys (get-in
+                                 state
+                                 [:mixers
+                                  (:current-mixer state)
+                                  :lines
+                                  (:current-line state)
+                                  :formats]))))))
 
 (defn- reset-line  ""
   [state]
-  (reset-channels (assoc state
-                         :current-line
-                         (first (keys (get-in state [:mixers
-                                                     (:current-mixer state)
-                                                     :lines]))))))
+  (reset-channels (assoc
+                   state
+                   :current-line
+                   (first (keys (get-in
+                                 state
+                                 [:mixers
+                                  (:current-mixer state)
+                                  :lines]))))))
 (defn- reset-mixer
   ""
   [state]
-  (reset-line (assoc state
-                     :current-mixer
-                     (first (keys (:mixers state))))))
+  (reset-line (assoc
+               state
+               :current-mixer
+               (first (keys (:mixers state))))))
 
 
 
@@ -75,8 +90,9 @@
 
 (def *state
   ""
-  (atom (reset-mixer {:mixers (audio/load-audio-system)
-                      :num-samples 1000})))
+  (atom (reset-mixer
+         {:mixers (audio/load-audio-system)
+          :num-samples 1000})))
 
 
 (defmulti event-handler
@@ -102,7 +118,9 @@
   ```
   (defn map-event-handler [event]
   (case (:event/type event)
-    ::set-done (swap! *state assoc-in [:by-id (:id event) :done] (:fx/event event))))
+    ::set-done (swap! *state assoc-in
+                             [:by-id (:id event) :done]
+                             (:fx/event event))))
   ```
   And this function will then be registered with the renderer
   ex:
@@ -113,12 +131,14 @@
     :middleware (fx/wrap-map-desc assoc :fx/type root)
     :opts {:fx.opt/map-event-handler map-event-handler}))
   ```
-  The map you paired to the event will be passed along to the registered event handler
+  The map you paired to the event will be passed to the registered event handler
   It will needs to designate its type with the `event/type` key
   And the actual even will be passed in under the `fx/event` key
-  Any additional keys you place in the map will also get passed along (`:id` in the example)
+  Any additional keys you place in the map will also get passed along
+  lik `:id` in the example
 
-  In the simple example we registered a function, however here I register a multimethod
+  In the simple example we registered a function,
+  however here I register a multimethod
   Then we simply switch on the `event/type`"
   :event/type)
 
@@ -244,22 +264,26 @@
               {:fx/type :choice-box ;; DROPDOWN -> ENDIANNESS
                :on-value-changed {:event/type ::set-endianness}
                :value current-endianness
-               :items (into [] (keys (get-in mixers [current-mixer
-                                                     :lines
-                                                     current-line
-                                                     :formats
-                                                     current-channels
-                                                     current-bit-size])))}
+               :items (into [] (keys (get-in
+                                      mixers
+                                      [current-mixer
+                                       :lines
+                                       current-line
+                                       :formats
+                                       current-channels
+                                       current-bit-size])))}
               {:fx/type :choice-box ;; DROPDOWN -> SAMPLE-RATE
                :on-value-changed {:event/type ::set-sample-rate}
                :value current-sample-rate
-               :items (into [] (keys (get-in mixers [current-mixer
-                                                     :lines
-                                                     current-line
-                                                     :formats
-                                                     current-channels
-                                                     current-bit-size
-                                                     current-endianness])))}]})
+               :items (into [] (keys (get-in
+                                      mixers
+                                      [current-mixer
+                                       :lines
+                                       current-line
+                                       :formats
+                                       current-channels
+                                       current-bit-size
+                                       current-endianness])))}]})
 
 ;; (defmethod event-handler ::read-into-buffer
 ;;   [event]
