@@ -66,7 +66,8 @@
                                   (:current-line state)
                                   :formats]))))))
 
-(defn- reset-line  ""
+(defn- reset-line
+  ""
   [state]
   (reset-channels (assoc
                    state
@@ -86,13 +87,56 @@
 
 
 
+(defn get-current-line
+  "Get the currently selected line object"
+  [{:keys [mixers
+           current-mixer
+           current-line]}]
+  (get-in mixers
+          [current-mixer
+           :lines
+           current-line
+           :line]))
 
+(defn get-current-format
+  ""
+  [{:keys [current-channels
+           current-bit-size
+           current-endianness
+           current-sample-rate
+           num-samples]}]
+  (audio/pcm-format current-channels
+                    current-bit-size
+                    (not current-endianness)
+                    current-sample-rate))
+
+
+(defn clear-buffer
+  "Closes the current line and returns a nil for the new buffer"
+  [state]
+  (audio/close-line (get-current-line state))
+  (assoc state
+         :byte-buffer
+         nil))
+
+(defn initialize-buffer
+  "1 - Opens the current line
+  2 - Initializes the byte buffer (for the current line and format)"
+  [state]
+  (let [line (get-current-line state)
+        format (get-current-format state)]
+    (audio/open-line line format)
+    (assoc state
+           :byte-buffer
+           (audio/allocate-byte-buffer format (:num-samples state)))))
 
 (def *state
   ""
   (atom (reset-mixer
          {:mixers (audio/load-audio-system)
-          :num-samples 1000})))
+          :num-samples 1000
+          :width 1000
+          :height 500})))
 
 
 (defmulti event-handler
@@ -144,87 +188,50 @@
 
 (defmethod event-handler ::set-mixer
   [event]
+  (swap! *state clear-buffer)
   (swap! *state assoc :current-mixer (:fx/event event))
-  (swap! *state reset-line))
+  (swap! *state reset-line)
+  (swap! *state initialize-buffer))
 
 (defmethod event-handler ::set-line
   [event]
+  (swap! *state clear-buffer)
   (swap! *state assoc :current-line (:fx/event event))
-  (swap! *state reset-channels))
+  (swap! *state reset-channels)
+  (swap! *state initialize-buffer))
 
 (defmethod event-handler ::set-channels
   [event]
+  (swap! *state clear-buffer)
   (swap! *state assoc :current-channels (:fx/event event))
-  (swap! *state reset-bit-size))
+  (swap! *state reset-bit-size)
+  (swap! *state initialize-buffer))
 
 (defmethod event-handler ::set-bit-size
   [event]
+  (swap! *state clear-buffer)
   (swap! *state assoc :current-bit-size (:fx/event event))
-  (swap! *state reset-endianness))
+  (swap! *state reset-endianness)
+  (swap! *state initialize-buffer))
 
 (defmethod event-handler ::set-endianness
   [event]
+  (swap! *state clear-buffer)
   (swap! *state assoc :current-endianness (:fx/event event))
-  (swap! *state reset-sample-rate))
+  (swap! *state reset-sample-rate)
+  (swap! *state initialize-buffer))
 
 (defmethod event-handler ::set-sample-rate
   [event]
-  (swap! *state assoc :current-sample-rate (:fx/event event)))
-;  (swap! *state reset-channels))
+  (swap! *state clear-buffer)
+  (swap! *state assoc :current-sample-rate (:fx/event event))
+  (swap! *state initialize-buffer))
 
+;; (swap! *state
+;;        assoc
+;;        :byte-buffer
+;;        (allocate-buffer
 
-;; (defn get-current-line
-;;   "Get the currently selected line object"
-;;   [{:keys [mixers
-;;            current-mixer
-;;            current-line]}]
-;;   (get-in state [:mixers
-;;                  current-mixer
-;;                  :lines
-;;                  current-line
-;;                  :line]))
-
-;; (defn get-current-format
-;;   ""
-;;   [{:keys [current-channels
-;;            current-bit-size
-;;            current-endianness
-;;            current-sample-rate
-;;            num-samples]}]
-;;   (audio/pcm-format current-channels
-;;                     current-bit-size
-;;                     (not current-endianness)
-;;                     current-sample-rate))
-
-
-;; (defn close-line
-;;   "Closes the current line"
-;;   [state]
-;;   (audio/close-line (get-current-line state)))
-
-;; (defn open-line
-;;   "Opens the currently selected line with the current format
-;;   And allocates a buffer for the result"
-;;   [{:keys [current-channels
-;;            current-bit-size
-;;            current-endianness
-;;            current-sample-rate
-;;            num-samples]}]
-;;   (let [current-format (audio/pcm-format current-channels
-;;                                          current-bit-size
-;;                                          (not current-endianness)
-;;                                          current-sample-rate)
-;;         endianness  (if (not current-endianness)
-;;                       java.nio.ByteOrder/BIG_ENDIAN
-;;                       java.nio.ByteOrder/LITTLE_ENDIAN)]
-;;     (println "state says endianness is: " current-endianness ". So setting line to:" endianness)
-;;     (audio/open-line (get-current-line state)
-;;                      current-format)
-;;     (swap! *state
-;;            assoc
-;;            :byte-buffer
-;;            (.order (java.nio.ByteBuffer/allocate (audio/calculate-buffer-size current-format num-samples))
-;;                    endianness))))
 
 
 (defn line-selection
@@ -291,34 +298,48 @@
                                        current-bit-size
                                        current-endianness])))}]})
 
-;; (defmethod event-handler ::read-into-buffer
-;;   [event]
-;;   (swap! *state assoc :current-mixer (:fx/event event)))
+(defmethod event-handler ::read-into-buffer
+  [event]
+  (audio/read-into-byte-buffer (get-current-line @*state)
+                               (:byte-buffer @*state)
+                               (:num-samples @*state)))
 
+(defn plot-buffer
+  ""
+  [^java.nio.ByteBuffer
+   buffer
+   num-samples
+   width
+   height]
+  (if (not (nil? buffer))
+    (plot/plot-points (into [](audio/print-shorts buffer num-samples))
+                      width
+                      height)))
 
-;; (defn plot-buffer
-;;   ""
-;;   [^java.nio.ByteBuffer
-;;    buffer
-;;    num-samples]
-;;   (if (not (nil? buffer))
-;;     (cameba.plot/plot-points (mapv #(vector %1 %2) (range) (audio/print-buffer buffer (* 2 num-samples)))
-;;                              num-samples
-;;                              (- (apply max (audio/print-buffer buffer num-samples)) (apply min (audio/print-buffer buffer num-samples))))))
+(defn chart-view
+  "Our plot"
+  [{:keys [byte-buffer
+           num-samples
+           width
+           height]}]
+  (if (not (nil? byte-buffer))
+    {:fx/type fx/ext-instance-factory
+     :byte-buffer byte-buffer
+     :num-samples num-samples
+     :create #(plot-buffer byte-buffer
+                           num-samples
+                           width
+                           (- height 100))}
+    {:fx/type :label
+     :text "none"}))
 
+(defmethod event-handler ::width-changed
+  [event]
+  (swap! *state assoc :width (:fx/event event)))
 
-;; (defn chart-view
-;;   "Our plot"
-;;   [{:keys [byte-buffer num-samples]}]
-;;   (if (not (nil? byte-buffer))
-;;     {:fx/type fx/ext-instance-factory
-;;      :byte-buffer byte-buffer
-;;      :num-samples num-samples
-;;      :create #(plot-buffer byte-buffer num-samples)}
-;;     {:fx/type :label
-;;      :text "none"}))
-
-
+(defmethod event-handler ::height-changed
+  [event]
+  (swap! *state assoc :height (:fx/event event)))
 
 (defn root
   "Takes the state atom (which is a map) and then get the mixers out of it and builds a windows with the mixers"
@@ -330,11 +351,17 @@
            current-endianness
            current-sample-rate
            byte-buffer
-           num-samples]
+           num-samples
+           width
+           height]
     :as state}]
 
   {:fx/type :stage
    :showing true
+   :width width
+   :height height
+   :on-width-changed {:event/type ::width-changed}
+   :on-height-changed {:event/type ::height-changed}
    :scene {:fx/type :scene
            :root {:fx/type :v-box
                   :children [{:fx/type line-selection
@@ -344,16 +371,16 @@
                               :current-channels current-channels
                               :current-bit-size current-bit-size
                               :current-endianness current-endianness
-                              :current-sample-rate current-sample-rate}]}}})
-                             ;; {:fx/type :button
-                             ;;  :text "Fire!"
-                             ;;  :on-action #(do (print %) (audio/read-into-byte-buffer (get-current-line state)
-                             ;;                                                         byte-buffer
-                             ;;                                                         num-samples))}]}}})
+                              :current-sample-rate current-sample-rate}
+                             {:fx/type :button
+                              :text "Fire!"
+                              :on-action {:event/type ::read-into-buffer}}
 
-                             ;; {:fx/type chart-view
-                             ;;  :byte-buffer byte-buffer
-                             ;;  :num-samples num-samples}]}}})
+                             {:fx/type chart-view
+                              :byte-buffer byte-buffer
+                              :num-samples num-samples
+                              :width width
+                              :height height}]}}})
 
 
 
@@ -365,3 +392,10 @@
 (fx/mount-renderer
  *state
  renderer)
+
+
+;; TODOS
+;;
+;; - 20 bit sound
+;; - non-PCM formats
+;;

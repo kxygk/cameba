@@ -7,35 +7,42 @@
 
 (defn plot-spec
   "Given a size (WIDTH HEIGHT) the output map describes how the plot looks."
-  [points width height]
-  {:x-axis (viz/linear-axis
-            {:domain [0 width]
-             :range  [0 width];[0 1000]
-             ;; puts the axis out of view (can't show the grid with no axis)
-             :pos    0
-             :major 500})
-   :y-axis (viz/linear-axis
-            {:domain      [(- height) height]
-             :range       [(- 500) 500]
-             ;; puts the axis out of view (can't show the grid with no axis)
-             :pos         0 
-             :label-dist  0
-             :major 5000
-             :label-style {:text-anchor "end"}})
-   :grid   {:attribs {:stroke "#caa"}
-            :minor-x false
-            :minor-y false}
-   :data   [{:values  points
-             :attribs {:fill "none" :stroke "#f60" :stroke-width 2.25}
-             :layout  viz/svg-line-plot}]})
+  [points output-width output-height]
+  (let [width (count points)
+        min (apply min points)
+        max (apply max points)
+        height (+ 2.2
+                  (java.lang.Math/abs ^int max)
+                  (java.lang.Math/abs ^int min))
+        points-indexed (mapv #(vector %1 %2) (range) points)]
+    {:x-axis (viz/linear-axis
+              {:domain [0 width]
+               :range  [0 output-width]
+               ;; puts the axis out of view (can't show the grid with no axis)
+               :pos    0
+               :major 500})
+     :y-axis (viz/linear-axis
+              {:domain      [(- height) height]
+               :range       [0 output-height]
+               ;; puts the axis out of view (can't show the grid with no axis)
+               :pos         0
+               :label-dist  0
+               :major 5000
+               :label-style {:text-anchor "end"}})
+     :grid   {:attribs {:stroke "#caa"}
+              :minor-x false
+              :minor-y false}
+     :data   [{:values  points-indexed
+               :attribs {:fill "none" :stroke "#f60" :stroke-width 2.25}
+               :layout  viz/svg-line-plot}]}))
 
 (defn plot-points
   ""
-  ([points width height]
-   (print "width -> " width "height ->" height)
-   (svg2jfx/svg-to-javafx-group (-> (plot-spec points (+ width 1.2) (+ height 1.2))
-                                    (viz/svg-plot2d-cartesian)
-                                    (#(svgthing/svg {:width 1000}
-                                                    :height 1000
-                                                    %))
-                                    (svgthing/serialize)))))
+  [points width height]
+;;  (println "Dimension -> width:" width "height:" height)
+  (svg2jfx/svg-to-javafx-group (-> (plot-spec points width height)
+                                   (viz/svg-plot2d-cartesian)
+                                   (#(svgthing/svg {:width width
+                                                    :height height}
+                                                   %))
+                                   (svgthing/serialize))))

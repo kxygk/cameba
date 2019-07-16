@@ -327,6 +327,33 @@
   (println "Is line open? "(.isOpen line)))
 
 
+(defn get-endianness
+  "Given a AudioFormat return either
+  java.nio.ByteOrder/BIG_ENDIAN
+  or
+  java.nio.ByteOrder/LITTLE_ENDIAN"
+  [^javax.sound.sampled.AudioFormat
+   format]
+  (if (.isBigEndian format)
+    java.nio.ByteOrder/BIG_ENDIAN
+    java.nio.ByteOrder/LITTLE_ENDIAN))
+
+(defn calculate-buffer-size
+  "Make a ByteBuffer for a given FORMAT and a given number of samples NUM-SAMPLES"
+  [^javax.sound.sampled.AudioFormat
+   format
+   num-samples]
+  (let [channels (.getChannels format)
+        frame-rate (.getFrameRate format)
+        sample-size (.getSampleSizeInBits format)]
+    (/ (* channels sample-size num-samples) 8)))
+
+(defn allocate-byte-buffer
+  ""
+  [format num-samples]
+  (.order (java.nio.ByteBuffer/allocate (calculate-buffer-size format num-samples))
+          (get-endianness format)))
+
 (defn read-into-byte-buffer
   "Reads LINE input into BYTE-BUFFER"
   [line
@@ -339,18 +366,6 @@
                                                   0
                                                   (* 2 num-samples)))
   (.stop ^javax.sound.sampled.TargetDataLine line))
-
-
-(defn calculate-buffer-size
-  "Make a ByteBuffer for a given FORMAT and a given number of samples NUM-SAMPLES"
-  [^javax.sound.sampled.AudioFormat
-   format
-   num-samples]
-  (let [channels (.getChannels format)
-        frame-rate (.getFrameRate format)
-        sample-size (.getSampleSizeInBits format)]
-    (/ (* channels sample-size num-samples) 8)))
-
 
 
 (defn print-buffer-in-binary
@@ -366,6 +381,17 @@
   [^java.nio.ByteBuffer
    buffer
    num-samples]
-  (map #(.getShort buffer %) (range 0 (- num-samples 1) 2)))
+  (into [] (map #(.getShort buffer %) (range 0 (- num-samples 1) 2))))
 ;; (audio/print-buffer (:byte-buffer @*state) 1000)
+
+
+(defn print-shorts
+  ""
+  [^java.nio.ByteBuffer
+   buffer
+   num-samples]
+  (let [java-array (short-array num-samples)]
+    (.get (.asShortBuffer buffer)
+          java-array)
+    java-array))
 
