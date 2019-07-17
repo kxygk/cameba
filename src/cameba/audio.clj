@@ -368,30 +368,51 @@
   [line
    ^java.nio.ByteBuffer
    buffer
-   num-samples]
+   num-samples
+   bit-size]
   (.start ^javax.sound.sampled.TargetDataLine line)
-  (println "Reading in this many samples: "(.read ^javax.sound.sampled.TargetDataLine line
-                                                  (.array buffer)
-                                                  0
-                                                  (* 2 num-samples)))
+  (println "Reading in this many samples: "
+           (.read ^javax.sound.sampled.TargetDataLine line
+                  (.array buffer)
+                  0
+                  (* (/ bit-size 8) num-samples)))
   (.stop ^javax.sound.sampled.TargetDataLine line))
 
-
-(defn print-buffer-in-binary
+(defmulti read-out-byte-buffer
   ""
+  (fn [byte-buffer num-samples bit-size]
+    bit-size))
+
+(defmethod read-out-byte-buffer 8
   [^java.nio.ByteBuffer
    buffer
-   num-samples]
-  (map #(Integer/toBinaryString (.getShort buffer %)) (range 0 num-samples 1)))
+   num-samples
+   bit-size]
+  (let [java-array (byte-array num-samples)]
+    (.get buffer
+          java-array)
+    (into [] java-array)))
 
-
-(defn print-buffer
-  ""
+(defmethod read-out-byte-buffer 16
   [^java.nio.ByteBuffer
    buffer
-   num-samples]
-  (into [] (map #(.getShort buffer %) (range 0 (- num-samples 1) 2))))
-;; (audio/print-buffer (:byte-buffer @*state) 1000)
+   num-samples
+   bit-size]
+  (let [java-array (short-array num-samples)]
+    (.get (.asShortBuffer buffer)
+          java-array)
+    (into [] java-array)))
+
+(defmethod read-out-byte-buffer 32
+  [^java.nio.ByteBuffer
+   buffer
+   num-samples
+   bit-size]
+  (let [java-array (int-array num-samples)]
+    (.get (.asIntBuffer buffer)
+          java-array)
+    (into [] java-array)))
+
 
 
 (defn print-shorts

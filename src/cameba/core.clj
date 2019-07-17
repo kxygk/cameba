@@ -302,17 +302,21 @@
   [event]
   (audio/read-into-byte-buffer (get-current-line @*state)
                                (:byte-buffer @*state)
-                               (:num-samples @*state)))
+                               (:num-samples @*state)
+                               (:current-bit-size @*state)))
 
 (defn plot-buffer
   ""
   [^java.nio.ByteBuffer
    buffer
    num-samples
+   bit-size
    width
    height]
   (if (not (nil? buffer))
-    (plot/plot-points (into [](audio/print-shorts buffer num-samples))
+    (plot/plot-points (audio/read-out-byte-buffer buffer
+                                                  num-samples
+                                                  bit-size)
                       width
                       height)))
 
@@ -320,6 +324,7 @@
   "Our plot"
   [{:keys [byte-buffer
            num-samples
+           bit-size
            width
            height]}]
   (if (not (nil? byte-buffer))
@@ -328,6 +333,7 @@
      :num-samples num-samples
      :create #(plot-buffer byte-buffer
                            num-samples
+                           bit-size
                            width
                            (- height 100))}
     {:fx/type :label
@@ -379,6 +385,7 @@
                              {:fx/type chart-view
                               :byte-buffer byte-buffer
                               :num-samples num-samples
+                              :bit-size current-bit-size
                               :width width
                               :height height}]}}})
 
