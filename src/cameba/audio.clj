@@ -225,6 +225,15 @@
    format]
   (= 1 (.getChannels format)))
 
+(defn- standard-bit-size?
+  "Check if the bit-size is an allowable value"
+  [^javax.sound.sampled.AudioFormat
+   format]
+  (let [bit-size (.getSampleSizeInBits format)]
+    (or (= bit-size 8)
+        (= bit-size 16)
+        (= bit-size 32))))
+
 (defn- parse-formats
   "Reads in the compatible formats into a tree of possibilites
   Keys decend in the following order:
@@ -247,7 +256,7 @@
                      nil);(.toString ^javax.sound.sampled.AudioFormat %2))
           {}
           ;; we only support PCM formats for now and only on a single channel
-          (filter one-channel? (filter pcm? formats))))
+          (filter standard-bit-size? (filter one-channel? (filter pcm? formats)))))
 
 
 (defn- parse-line
