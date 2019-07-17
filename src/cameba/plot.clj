@@ -9,25 +9,32 @@
   "Given a size (WIDTH HEIGHT) the output map describes how the plot looks."
   [points output-width output-height]
   (let [width (count points)
-        min (apply min points)
-        max (apply max points)
-        height (+ 2.2
-                  (java.lang.Math/abs ^int max)
-                  (java.lang.Math/abs ^int min))
+        min-point (apply min points)
+        max-point (apply max points)
+        height (+ 1 (max (java.lang.Math/abs ^int max-point)
+                         (java.lang.Math/abs ^int min-point)))
         points-indexed (mapv #(vector %1 %2) (range) points)]
     {:x-axis (viz/linear-axis
               {:domain [0 width]
                :range  [0 output-width]
                ;; puts the axis out of view (can't show the grid with no axis)
                :pos    0
-               :major 500})
+               :major (/ (->> width
+                           java.lang.Math/log10
+                           java.lang.Math/round
+                           (java.lang.Math/pow 10))
+                         4)}) ;; number of vertical lines
      :y-axis (viz/linear-axis
-              {:domain      [(- height) height]
+              {:domain      [ (- height) height]
                :range       [0 output-height]
                ;; puts the axis out of view (can't show the grid with no axis)
                :pos         0
                :label-dist  0
-               :major 5000
+               :major (/ (->> height
+                           java.lang.Math/log10
+                           java.lang.Math/round
+                           (java.lang.Math/pow 10))
+                         4) ;; number of horizontal lines
                :label-style {:text-anchor "end"}})
      :grid   {:attribs {:stroke "#caa"}
               :minor-x false
