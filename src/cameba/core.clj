@@ -364,8 +364,6 @@
 
   {:fx/type :stage
    :showing true
-   :width width
-   :height height
    :on-width-changed {:event/type ::width-changed}
    :on-height-changed {:event/type ::height-changed}
    :scene {:fx/type :scene
