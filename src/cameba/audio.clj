@@ -389,7 +389,7 @@
    num-samples
    bit-size]
   (let [java-array (byte-array num-samples)]
-    (.get buffer
+    (.get (.asReadOnlyBuffer buffer)
           java-array)
     (into [] java-array)))
 
