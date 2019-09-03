@@ -138,6 +138,9 @@
           :width 1000
           :height 500})))
 
+(swap! *state clear-buffer)
+(swap! *state reset-line)
+(swap! *state initialize-buffer)
 
 (defmulti event-handler
   "CLJFX -  Event Handlers
@@ -238,11 +241,7 @@
   ""
   [{:keys [mixers
            current-mixer
-           current-line
-           current-channels
-           current-bit-size
-           current-endianness
-           current-sample-rate]}]
+           current-line]}]
   {:fx/type :h-box
    :children [{:fx/type :choice-box ;; DROPDOWN -> MIXER
                :fx/key [:mix current-mixer]
@@ -254,8 +253,18 @@
                :on-value-changed {:event/type ::set-line}
                :value current-line
                :items (into [] (keys (get-in mixers [current-mixer
-                                                     :lines])))}
-              {:fx/type :choice-box ;; DROPDOWN -> CHANNELS
+                                                     :lines])))}]})
+(defn format-selection
+  ""
+  [{:keys [mixers
+           current-mixer
+           current-line
+           current-channels
+           current-bit-size
+           current-endianness
+           current-sample-rate]}]
+  {:fx/type :h-box
+   :children [{:fx/type :choice-box ;; DROPDOWN -> CHANNELS
                :fx/key [:line current-mixer current-line current-channels]
                :on-value-changed {:event/type ::set-channels}
                :value current-channels
@@ -303,7 +312,8 @@
   (audio/read-into-byte-buffer (get-current-line @*state)
                                (:byte-buffer @*state)
                                (:num-samples @*state)
-                               (:current-bit-size @*state)))
+                               (:current-bit-size @*state))
+  (swap! *state assoc :height (inc (:height @*state))))
 
 (defn plot-buffer
   ""
@@ -376,8 +386,16 @@
                               :current-bit-size current-bit-size
                               :current-endianness current-endianness
                               :current-sample-rate current-sample-rate}
+                             {:fx/type format-selection
+                              :mixers mixers
+                              :current-mixer current-mixer
+                              :current-line current-line
+                              :current-channels current-channels
+                              :current-bit-size current-bit-size
+                              :current-endianness current-endianness
+                              :current-sample-rate current-sample-rate}
                              {:fx/type :button
-                              :text "Fire!"
+                              :text "Get another sample.."
                               :on-action {:event/type ::read-into-buffer}}
 
                              {:fx/type chart-view
