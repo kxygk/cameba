@@ -398,6 +398,9 @@
  *state
  renderer)
 
+(defn -main []
+  renderer)
+
 
 ;; TODOS
 ;;
