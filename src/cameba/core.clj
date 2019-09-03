@@ -318,34 +318,30 @@
   "Our plot"
   [{:keys [byte-buffer
            num-samples
+           num-channels
            bit-size
            width
            height]}]
   (if (not (nil? byte-buffer))
-    {:fx/type :line-chart
-     :x-axis {:fx/type :number-axis}
-     :y-axis {:fx/type :number-axis}
-     :create-symbols false
-     :legend-visible false
-     :animated false
-     :data [{:fx/type :xy-chart-series
-             :name "Position by time"
-             :data (map-indexed (fn [idx itm]
-                                  {:fx/type :xy-chart-data
-                                   :x-value idx
-                                   :y-value itm})
-                                (audio/read-out-byte-buffer byte-buffer
-                                                            num-samples
-                                                            bit-size))}
-            {:fx/type :xy-chart-series
-             :name "Position by time"
-             :data (map-indexed (fn [idx itm]
-                                    {:fx/type :xy-chart-data
-                                     :x-value idx
-                                     :y-value itm})
-                                (reverse (audio/read-out-byte-buffer byte-buffer
-                                                                     num-samples
-                                                                     bit-size)))}]}
+    (let [buffer (audio/read-out-byte-buffer byte-buffer
+                                             num-samples
+                                             bit-size)]
+      {:fx/type :line-chart
+       :x-axis {:fx/type :number-axis}
+       :y-axis {:fx/type :number-axis}
+       :create-symbols false
+       :legend-visible false
+       :animated false
+       :data (map (fn [channel]
+                     {:fx/type :xy-chart-series
+                      :name "Position by time"
+                      :data (map-indexed (fn [idx itm]
+                                           {:fx/type :xy-chart-data
+                                            :x-value idx
+                                            :y-value itm})
+                                         (take-nth num-channels
+                                                   (nthrest buffer channel)))})
+                  (range num-channels))})
     {:fx/type :label
      :text "none"}))
 
@@ -402,6 +398,7 @@
                              {:fx/type audio-signal-plot
                               :byte-buffer byte-buffer
                               :num-samples num-samples
+                              :num-channels current-channels
                               :bit-size current-bit-size
                               :width width
                               :height height}]}}})

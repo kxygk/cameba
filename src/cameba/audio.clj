@@ -219,12 +219,6 @@
         ;; TODO: Maybe support this?
         (= encoding javax.sound.sampled.AudioFormat$Encoding/PCM_UNSIGNED))))
 
-(defn- one-channel?
-  "Check if there is more than one channel"
-  [^javax.sound.sampled.AudioFormat
-   format]
-  (= 1 (.getChannels format)))
-
 (defn- standard-bit-size?
   "Check if the bit-size is an allowable value"
   [^javax.sound.sampled.AudioFormat
@@ -256,7 +250,7 @@
                      nil);(.toString ^javax.sound.sampled.AudioFormat %2))
           {}
           ;; we only support PCM formats for now and only on a single channel
-          (filter standard-bit-size? (filter one-channel? (filter pcm? formats)))))
+          (filter standard-bit-size? (filter pcm? formats))))
 
 
 (defn- parse-line
