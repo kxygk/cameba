@@ -1,6 +1,5 @@
 (ns cameba.core
   (:require [cameba.audio :as audio]
-            [cameba.plot :as plot]
             [cljfx.api :as fx])
   (:import [javafx.scene.input KeyCode KeyEvent]))
 
@@ -135,7 +134,7 @@
   (atom (reset-mixer
          {:mixers (audio/load-audio-system)
           :num-samples 1000
-          :width 1000
+          :width 750
           :height 500})))
 
 (swap! *state clear-buffer)
@@ -330,7 +329,7 @@
                       width
                       height)))
 
-(defn chart-view
+(defn audio-signal-plot
   "Our plot"
   [{:keys [byte-buffer
            num-samples
@@ -338,14 +337,30 @@
            width
            height]}]
   (if (not (nil? byte-buffer))
-    {:fx/type fx/ext-instance-factory
-     :byte-buffer byte-buffer
-     :num-samples num-samples
-     :create #(plot-buffer byte-buffer
-                           num-samples
-                           bit-size
-                           width
-                           (- height 100))}
+    {:fx/type :line-chart
+     :x-axis {:fx/type :number-axis}
+     :y-axis {:fx/type :number-axis}
+     :create-symbols false
+     :legend-visible false
+     :animated false
+     :data [{:fx/type :xy-chart-series
+             :name "Position by time"
+             :data (map-indexed (fn [idx itm]
+                                  {:fx/type :xy-chart-data
+                                   :x-value idx
+                                   :y-value itm})
+                                (audio/read-out-byte-buffer byte-buffer
+                                                            num-samples
+                                                            bit-size))}
+            {:fx/type :xy-chart-series
+             :name "Position by time"
+             :data (map-indexed (fn [idx itm]
+                                    {:fx/type :xy-chart-data
+                                     :x-value idx
+                                     :y-value itm})
+                                (reverse (audio/read-out-byte-buffer byte-buffer
+                                                                     num-samples
+                                                                     bit-size)))}]}
     {:fx/type :label
      :text "none"}))
 
@@ -377,6 +392,7 @@
    :on-width-changed {:event/type ::width-changed}
    :on-height-changed {:event/type ::height-changed}
    :scene {:fx/type :scene
+           ;;:stylesheets #{"test.css"}
            :root {:fx/type :v-box
                   :children [{:fx/type line-selection
                               :mixers mixers
@@ -398,7 +414,7 @@
                               :text "Get another sample.."
                               :on-action {:event/type ::read-into-buffer}}
 
-                             {:fx/type chart-view
+                             {:fx/type audio-signal-plot
                               :byte-buffer byte-buffer
                               :num-samples num-samples
                               :bit-size current-bit-size
@@ -422,6 +438,10 @@
 
 ;; TODOS
 ;;
+;; short term
+;; - variable sample size
+;;
+;; long term:
 ;; - 20 bit sound
 ;; - non-PCM formats
 ;;
