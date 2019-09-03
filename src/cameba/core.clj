@@ -314,21 +314,6 @@
                                (:current-bit-size @*state))
   (swap! *state assoc :height (inc (:height @*state))))
 
-(defn plot-buffer
-  ""
-  [^java.nio.ByteBuffer
-   buffer
-   num-samples
-   bit-size
-   width
-   height]
-  (if (not (nil? buffer))
-    (plot/plot-points (audio/read-out-byte-buffer buffer
-                                                  num-samples
-                                                  bit-size)
-                      width
-                      height)))
-
 (defn audio-signal-plot
   "Our plot"
   [{:keys [byte-buffer
